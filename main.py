@@ -11,6 +11,8 @@ import os                       # for reading .env variables (like our API key)
 from fastapi import FastAPI     # the web framework that handles incoming HTTP requests.
 from pydantic import BaseModel  # BaseModel from Pydantic lets us define the expected shape of incoming request data. FastAPI uses it to validate automatically.
 from openai import OpenAI
+from fastapi.staticfiles import StaticFiles  # lets FastAPI serve static files from a folder.
+from fastapi.responses import FileResponse  # lets us return a specific file as a response.
 
 
 # --- Setup ---------------------------------------------------
@@ -18,6 +20,10 @@ load_dotenv() # Load env variables from .env file, must run before os.getenv() b
 
 # Create the FastAPI app. 
 app = FastAPI() # This is the core object that registers all our routes and handles incoming HTTP requests.
+
+# Mount the frontend folder so FastAPI serves its files.
+# Any file inside frontend/ is accessible at /frontend/filename 
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
 # Create the AI client. 
 client = OpenAI(
@@ -31,11 +37,10 @@ client = OpenAI(
 # When a request comes in, FastAPI calls the matching function
 # and returns whatever it returns as a JSON response.
 
-# Root route — just confirms the server is running.
-# The browser hits this when you visit http://localhost:8000
+# Root route — serves the HTML page when you visit http://localhost:8000
 @app.get("/")
 def root():
-    return {"message": "hello"}
+    return FileResponse("frontend/index.html")
 
 
 # Health route — used by deployment platforms like Render to check if the server is alive. 
