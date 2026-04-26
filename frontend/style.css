@@ -1,0 +1,117 @@
+/* ============================================================
+   AI Chat — Stylesheet
+   Controls the visual appearance of the chat interface.
+   ============================================================ */
+
+
+/* --- Page layout ------------------------------------------ */
+
+/* Reset default browser spacing and use border-box sizing
+   so padding doesn't unexpectedly increase element sizes. */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;          /* Fill the full viewport height */
+    padding: 20px;
+}
+
+h1 {
+    margin-bottom: 16px;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+
+/* --- Chat box --------------------------------------------- */
+
+/* The scrollable area that holds all messages.
+   flex-direction: column puts new messages at the bottom. */
+#chat-box {
+    width: 100%;
+    max-width: 700px;
+    flex: 1;                /* Grow to fill available space between h1 and input area */
+    overflow-y: auto;       /* Scroll when messages overflow */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;              /* Space between messages */
+    padding: 16px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 16px;
+}
+
+
+/* --- Message bubbles -------------------------------------- */
+
+/* Base style shared by all messages */
+.message {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    word-wrap: break-word;
+}
+
+/* User messages appear on the right in blue */
+.message.user {
+    background-color: #0084ff;
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+/* AI messages appear on the left in grey */
+.message.ai {
+    background-color: #e4e6eb;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+
+/* --- Input area ------------------------------------------- */
+
+#input-area {
+    display: flex;
+    width: 100%;
+    max-width: 700px;
+    gap: 8px;
+}
+
+#user-input {
+    flex: 1;                /* Take up all space except the button */
+    padding: 12px 16px;
+    border: 1px solid #ccc;
+    border-radius: 24px;
+    font-size: 1rem;
+    outline: none;
+}
+
+#user-input:focus {
+    border-color: #0084ff;
+}
+
+#send-btn {
+    padding: 12px 20px;
+    background-color: #0084ff;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+#send-btn:hover {
+    background-color: #006edb;
+}
