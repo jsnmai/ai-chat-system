@@ -10,6 +10,7 @@
 // without searching the DOM on every message.
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
+const roleInput = document.getElementById("role-input");
 const sendBtn = document.getElementById("send-btn");
 
 
@@ -39,18 +40,34 @@ async function sendMessage() {
     appendMessage("user", message);
     userInput.value = "";
 
-    // POST the message to the backend as JSON.
+    // Require a role before sending — show an error message if missing.
+    const role = roleInput.value.trim();
+    if (!role) {
+        appendMessage("ai", "Please enter a role for the assistant before sending a message.");
+        return;
+    }
+
+    // POST the message and role to the backend as JSON.
     // async/await means the browser waits for the response without freezing the page.
-    const response = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },  // tell the server we're sending JSON
-        body: JSON.stringify({ message: message }),        // convert JS object → JSON string
-    });
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },  // tell the server we're sending JSON
+            body: JSON.stringify({ message: message, role: role }),  // convert JS object to JSON string
+        });
 
-    // Parse the JSON response body into a JS object.
-    const data = await response.json();  // data looks like: { reply: "..." }
+        const data = await response.json();
 
-    appendMessage("ai", data.reply);
+        // If the server returned an error, show the error message instead of a reply.
+        if (!response.ok) {
+            appendMessage("ai", data.detail || "Something went wrong. Please try again.");
+            return;
+        }
+
+        appendMessage("ai", data.reply || "No response received.");
+    } catch (error) {
+        appendMessage("ai", "Could not reach the server. Please check your connection.");
+    }
 }
 
 

@@ -4,9 +4,9 @@
 # ============================================================
 from dotenv import load_dotenv  # reads .env and makes its values available via os.getenv()
 import os                       # used to read environment variables like the API key
-from fastapi import FastAPI     # the web framework that handles incoming HTTP requests
-from pydantic import BaseModel  # validates the shape of incoming request data automatically
-from openai import OpenAI
+from fastapi import FastAPI, HTTPException  # HTTPException lets us return error responses with a status code
+from pydantic import BaseModel             # validates the shape of incoming request data automatically
+from openai import OpenAI, RateLimitError  # RateLimitError is raised when the API is temporarily rate-limited
 from fastapi.staticfiles import StaticFiles  # serves files from a folder (HTML, CSS, JS)
 from fastapi.responses import FileResponse   # returns a specific file as an HTTP response
 
@@ -48,18 +48,48 @@ def health():
 # Pydantic rejects request automatically if "message" is missing or not a string.
 class ChatRequest(BaseModel):
     message: str
+    role: str = "answers questions"  # default if the frontend sends nothing
+
+
+# Models to try in order — if one is rate-limited, the next is used as a fallback.
+MODELS = [
+    "google/gemma-4-31b-it:free",
+    "openai/gpt-oss-120b:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "qwen/qwen3-next-80b-a3b-instruct:free",
+    "nousresearch/hermes-3-llama-3.1-405b:free",
+    "google/gemma-3-27b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "google/gemma-3-12b-it:free",
+    "openai/gpt-oss-20b:free",
+    "qwen/qwen3-coder:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "google/gemma-3-4b-it:free",
+    "liquid/lfm-2.5-1.2b-instruct:free",
+]
 
 
 # --- Chat endpoint -------------------------------------------
-# Receives the user's message, sends it to the AI, returns the reply.
+# Receives the user's message and role, sends them to the AI, returns the reply.
 @app.post("/chat")
 def chat(request: ChatRequest):
-    response = client.chat.completions.create(
-        model="google/gemma-4-31b-it:free",
-        messages=[
-            {"role": "system", "content": "You are an assistant that gives silly answers."}, # "system" message sets the AI's behavior.
-            {"role": "user", "content": request.message}, # "user" message is what the user typed.
-        ],
-    )
-    # Extract the AI's reply from the response and send it back to the browser as JSON: {"reply": "..."}
-    return {"reply": response.choices[0].message.content} 
+    system_prompt = f"You are an assistant that {request.role}."
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": request.message},
+    ]
+
+    # Try each model in order, falling back to the next if rate-limited.
+    for model in MODELS:
+        try:
+            response = client.chat.completions.create(model=model, messages=messages)
+            return {"reply": response.choices[0].message.content}
+        except RateLimitError:
+            continue
+
+    # All models are rate-limited — let the frontend know.
+    raise HTTPException(status_code=429, detail="All models are currently rate-limited. Please try again in a moment.")
